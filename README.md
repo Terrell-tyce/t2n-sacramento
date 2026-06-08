@@ -23,11 +23,11 @@ The primary research interest is measuring crosswalk lengths and evaluating how 
 
 1. **Download** — fetches zoom-19 XYZ tiles from Sacramento County's public 2022 ortho imagery service into a local `z/x/y.png` folder structure
 2. **Generate** — builds tile2net's inference grid from the local tile directory
-3. **Inference** — runs the HRNetV2 segmentation model to produce polygons, then derives a centerline pedestrian network
+3. **Inference** — runs the model to produce polygons, then derives a centerline pedestrian network
 4. **Cleanup** — optionally deletes raw tiles and stitched images to recover disk space
 5. **Merge** — concatenates the four quadrant shapefiles into single city-wide files
 
-The city is split into four quadrants (SW, SE, NW, NE) to keep memory and disk usage manageable at zoom 19. Each quadrant is ~13,000 tiles and takes roughly 20 minutes of inference on an RTX 3060.
+The city is split into four quadrants (SW, SE, NW, NE) to keep memory and disk usage manageable at zoom 19. Each quadrant is ~13,000 tiles.
 
 ---
 
