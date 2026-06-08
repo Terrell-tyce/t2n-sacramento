@@ -1,6 +1,6 @@
-# tile2net — Sacramento Pedestrian Network
+# Sacramento Crossing Extraction
 
-Automated extraction of pedestrian infrastructure (sidewalks, crosswalks, footpaths) from aerial imagery using [tile2net](https://github.com/VIDA-NYU/tile2net), applied to the City of Sacramento. Sacramento is not in tile2net's built-in supported regions, so this pipeline handles tile downloading manually from Sacramento County's public imagery service and feeds the local tiles into tile2net for inference.
+Automated extraction of crosswalks from aerial imagery using [tile2net](https://github.com/VIDA-NYU/tile2net), applied to the City of Sacramento. Sacramento is not in tile2net's built-in supported regions, so this pipeline handles tile downloading manually from Sacramento County's public imagery service and feeds the local tiles into tile2net for inference.
 
 The primary research interest is measuring crosswalk lengths and evaluating how well tile2net performs on a western US city with wider streets and more suburban land use than the east coast cities it was trained on.
 
