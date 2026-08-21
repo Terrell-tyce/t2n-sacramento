@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+
+# pipeline outputs
+tile2net_output/
+sacramento_crosswalks.html

@@ -47,16 +47,29 @@ MAP_ZOOM = 15
 # ---------------------------------------------------------------------------
 
 print("Loading shapefiles...")
-network  = gpd.read_file(NETWORK_SHP)
-polygons = gpd.read_file(POLYGONS_SHP)
 
+if not NETWORK_SHP.exists():
+    print(f"ERROR: {NETWORK_SHP} not found.")
+    print("Run run_tile2net_sacramento.py first with MERGE_OUTPUTS = True,")
+    print("or point MERGED_DIR at an existing merged output folder.")
+    raise SystemExit(1)
+
+network = gpd.read_file(NETWORK_SHP)
 if network.crs and network.crs.to_epsg() != 4326:
     network = network.to_crs(4326)
-if polygons.crs and polygons.crs.to_epsg() != 4326:
-    polygons = polygons.to_crs(4326)
+net_cw = network[network["f_type"] == "crosswalk"].copy()
 
-net_cw  = network[network["f_type"] == "crosswalk"].copy()
-poly_cw = polygons[polygons["f_type"] == "crosswalk"].copy()
+# The polygon layer is OPTIONAL and is not produced by the current
+# merge_outputs() step -- see "Known gaps" in README.md. The map degrades to
+# centerlines only when it is absent, rather than failing outright.
+if POLYGONS_SHP.exists():
+    polygons = gpd.read_file(POLYGONS_SHP)
+    if polygons.crs and polygons.crs.to_epsg() != 4326:
+        polygons = polygons.to_crs(4326)
+    poly_cw = polygons[polygons["f_type"] == "crosswalk"].copy()
+else:
+    print(f"  NOTE: {POLYGONS_SHP.name} not found -- drawing centerlines only.")
+    poly_cw = network.iloc[0:0].copy()
 
 print(f"  Crosswalk centerlines (all city): {len(net_cw):,}")
 print(f"  Crosswalk polygons    (all city): {len(poly_cw):,}")
@@ -87,7 +100,8 @@ print("Building map...")
 m = folium.Map(location=MAP_CENTER, zoom_start=MAP_ZOOM, tiles=None)
 
 # --- Basemaps (radio toggle — only one active at a time) ---
-# Sacramento County 2022 orthos — same imagery tile2net was trained on
+# Sacramento County 2022 orthos — the imagery inference was actually run against.
+# (Note: tile2net's model was trained on east-coast cities, not on this imagery.)
 folium.TileLayer(
     tiles="https://mapservices.gis.saccounty.net/arcgis/rest/services/Cache/IMAGERY_2022_WEB_MERCATOR/MapServer/tile/{z}/{y}/{x}",
     attr="Sacramento County GIS 2022",

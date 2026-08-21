@@ -2,15 +2,20 @@
 run_tile2net_sacramento.py
 
 Runs the full tile2net pedestrian network extraction pipeline over the
-Sacramento region using an NVIDIA GPU (tested on RTX 3060 12GB).
+Sacramento region.
 
 Since Sacramento is not in tile2net's built-in supported regions list,
-this script handles tile downloading manually (via requests) from the
-USGS National Map XYZ tile service, then feeds the local tile directory
-to tile2net using the input_dir argument.
+this script handles tile downloading manually (via requests) from
+Sacramento County GIS's public 2022 ortho imagery tile service, then
+feeds the local tile directory to tile2net using the input_dir argument.
+
+FIRST TIME RUNNING THIS? Read the "First run" section of README.md before
+starting. A full run downloads ~52,000 tiles and takes hours; the README
+explains how to point SUBREGIONS at a few blocks first to confirm the whole
+chain works end to end in a couple of minutes.
 
 Pipeline:
-  1. download  — fetches XYZ tiles from USGS into z/x/y.png folder structure
+  1. download  — fetches XYZ tiles from Sacramento County GIS into z/x/y.png
   2. generate  — builds tile2net's inference grid from the local tile dir
   3. inference — runs segmentation model → polygons → centerline network
   4. cleanup   — deletes intermediate files to save disk space
@@ -61,7 +66,8 @@ USE_SUBREGIONS = True
 FULL_REGION = ("sacramento_city", 38.4950, -121.5600, 38.6250, -121.4200)
 
 # Sub-region grid split for City of Sacramento proper (USE_SUBREGIONS = True).
-# At zoom 19 this is ~2,200 tiles per quadrant — manageable with cleanup on.
+# At zoom 19 this is ~13,000 tiles per quadrant (~52,000 total) — manageable
+# with cleanup on. Expect hours, not minutes, for a full four-quadrant run.
 # Comment out rows to skip specific quadrants.
 # Format: (name, lat_min, lon_min, lat_max, lon_max)
 SUBREGIONS = [
@@ -225,7 +231,6 @@ def run_inference(name, out_dir, raster=None):
     """Run inference. Reuses raster object if available, else reconstructs."""
     if raster is None:
         from tile2net import Raster
-        bbox_stub = f"{name}"  # fallback — raster should always be passed
         raster = Raster.from_info(str(out_dir / name / f"{name}.json"))
     log(f"  Running segmentation inference...")
     raster.project.num_workers = 0  # disable multiprocessing to prevent immediate gridlock
@@ -301,7 +306,15 @@ def merge_outputs():
         gdfs = []
         for f in files:
             try:
-                gdfs.append(gpd.read_file(f))
+                gdf = gpd.read_file(f)
+                # Tag every feature with the sub-region it came from so merged
+                # outputs stay traceable to a quadrant. Layout is
+                # OUTPUT_ROOT/<region>/..., so the first path part is the name.
+                try:
+                    gdf["quadrant"] = f.relative_to(OUTPUT_ROOT).parts[0]
+                except ValueError:
+                    gdf["quadrant"] = "unknown"
+                gdfs.append(gdf)
             except Exception as e:
                 log(f"  WARNING: could not read {f.name}: {e}")
 
